@@ -20,7 +20,15 @@ This library adds a special kind of schema that actually multiplexes other schem
 based on object type. When serializing values, it uses get_obj_type() method
 to get object type name. Then it uses ``type_schemas`` name-to-Schema mapping
 to get schema for that particular object type, serializes object using that
-schema and adds an extra field with name of object type. Deserialization is reverse.
+schema and adds an extra field with name of object type.
+
+When deserializing values, the ``type_field`` class property (defaults to ``"type"``) is used
+as the key on the data to load that is expected to match one of the entries in ``type_schemas``
+name-to-Schema mapping.
+
+Alternatively, you can override the ``get_load_schema(self, data)`` method to return the schema
+based on the given input ``data`` dict (bypassing the ``type_field`` and ``type_schemas`` logic
+entirely for the loading side).
 
 Installing
 ----------

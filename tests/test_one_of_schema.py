@@ -410,3 +410,19 @@ class TestOneOfSchema:
 
         unmarshalled = schema.load(marshalled, many=True)
         assert data == unmarshalled
+
+    def test_override_get_load(self):
+        class SubtypedFoo(m.Schema):
+            type = f.String(required=True)
+            subtype = f.String(required=True)
+            value = f.String(required=True)
+
+        class MySchemaWithGetLoad(OneOfSchema):
+            def get_load_schema(self, data):
+                if data["type"] == "Foo" and data["subtype"] == "2.0":
+                    return SubtypedFoo
+                return EmptySchema
+        schema = MySchemaWithGetLoad()
+        foo_data = {"type": "Foo", "subtype": "2.0", "value": "hello"}
+        unmarshalled = schema.load(foo_data)
+        assert unmarshalled == foo_data

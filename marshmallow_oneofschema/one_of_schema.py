@@ -63,6 +63,28 @@ class OneOfSchema(Schema):
         """Returns name of object schema"""
         return obj.__class__.__name__
 
+    def get_load_schema(self, data):
+        """Returns the schema to use for loading"""
+        data_type = data.get(self.type_field)
+        if self.type_field in data and self.type_field_remove:
+            data.pop(self.type_field)
+
+        if not data_type:
+            raise ValidationError(
+                {self.type_field: ["Missing data for required field."]}
+            )
+
+        try:
+            type_schema = self.type_schemas.get(data_type)
+        except TypeError:
+            # data_type could be unhashable
+            raise ValidationError({self.type_field: ["Invalid value: %s" % data_type]})
+        if not type_schema:
+            raise ValidationError(
+                {self.type_field: ["Unsupported value: %s" % data_type]}
+            )
+        return type_schema
+
     def dump(self, obj, *, many=None, **kwargs):
         errors = {}
         result_data = []
@@ -150,24 +172,7 @@ class OneOfSchema(Schema):
         data = dict(data)
         unknown = unknown or self.unknown
 
-        data_type = data.get(self.type_field)
-        if self.type_field in data and self.type_field_remove:
-            data.pop(self.type_field)
-
-        if not data_type:
-            raise ValidationError(
-                {self.type_field: ["Missing data for required field."]}
-            )
-
-        try:
-            type_schema = self.type_schemas.get(data_type)
-        except TypeError:
-            # data_type could be unhashable
-            raise ValidationError({self.type_field: ["Invalid value: %s" % data_type]})
-        if not type_schema:
-            raise ValidationError(
-                {self.type_field: ["Unsupported value: %s" % data_type]}
-            )
+        type_schema = self.get_load_schema(data)
 
         schema = type_schema if isinstance(type_schema, Schema) else type_schema()
 
